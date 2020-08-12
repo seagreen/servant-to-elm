@@ -43,11 +43,10 @@ import Language.Haskell.To.Elm
 
 -- | Generate an Elm function for making a request to a Servant endpoint.
 elmEndpointDefinition
-  :: Expression Void -- ^ The URL base of the endpoint
-  -> Name.Module -- ^ The module that the function should be generated into
+  :: Name.Module -- ^ The module that the function should be generated into
   -> Endpoint -- ^ A description of the endpoint
   -> Definition
-elmEndpointDefinition urlBase moduleName endpoint =
+elmEndpointDefinition moduleName endpoint =
   Definition.Constant
     (Name.Qualified moduleName functionName)
     0
@@ -74,7 +73,9 @@ elmEndpointDefinition urlBase moduleName endpoint =
     elmTypeSig =
       Type.funs
         (concat
-          [ [ _encodedType arg
+          [ [Type.Global "String.String"
+            ]
+          , [ _encodedType arg
             | (_, arg, _) <- _headers endpoint
             ]
           , [ _encodedType arg
@@ -137,7 +138,9 @@ elmEndpointDefinition urlBase moduleName endpoint =
 
     argNames =
       concat
-      [ [ headerArgName i
+      [ ["urlBase"
+        ]
+      , [ headerArgName i
         | (i, _) <- zip [0..] $ _headers endpoint
         ]
       , [ capturedArgName i
@@ -226,7 +229,7 @@ elmEndpointDefinition urlBase moduleName endpoint =
           Expression.apps
             "String.join"
             [ Expression.String "/"
-            , Expression.List $ vacuous urlBase : fmap elmPathSegment numberedPathSegments
+            , Expression.List $ Expression.Var "urlBase" : fmap elmPathSegment numberedPathSegments
             ]
 
         withParams params =
